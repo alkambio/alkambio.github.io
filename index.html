@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALKAMBIO · Calculadora de Cambio VES / COP</title>
+  <meta name="description" content="Calcula cuántos pesos colombianos recibes por tus bolívares al mejor precio del mercado." />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans  : ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- ALKAMBIO CONFIG -->
+  <script src="config.js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+
+    /* ═══════ FONDO ANIMADO ═══════ */
+    .bg-main {
+      background: #050a0e;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Orbes flotantes */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #0fa968 0%, transparent 70%);
+      top: -10%; left: -8%;
+      animation: orbit1 18s ease-in-out infinite;
+    }
+    .orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #047857 0%, transparent 70%);
+      bottom: 5%; right: -5%;
+      animation: orbit2 22s ease-in-out infinite;
+    }
+    .orb-3 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, #10b981 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation: orbit3 15s ease-in-out infinite;
+      opacity: 0.2;
+    }
+
+    @keyframes orbit1 {
+      0%   { transform: translate(0, 0) scale(1); }
+      33%  { transform: translate(80px, 60px) scale(1.15); }
+      66%  { transform: translate(-30px, 100px) scale(0.9); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+    @keyframes orbit2 {
+      0%   { transform: translate(0, 0) scale(1); }
+      33%  { transform: translate(-70px, -50px) scale(1.1); }
+      66%  { transform: translate(40px, -80px) scale(0.95); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+    @keyframes orbit3 {
+      0%   { transform: translate(-50%, -50%) scale(1); }
+      50%  { transform: translate(-40%, -60%) scale(1.3); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    /* Noise overlay sutil */
+    .bg-main::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ═══════ TARJETA PRINCIPAL ═══════ */
+    .card-main {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 28px;
+      box-shadow:
+        0 4px 60px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      position: relative;
+      z-index: 2;
+    }
+    .card-main::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 28px;
+      background: linear-gradient(160deg, rgba(16,185,129,0.2) 0%, transparent 40%, transparent 60%, rgba(16,185,129,0.08) 100%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* ═══════ INPUT ═══════ */
+    .input-box {
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    .input-box:focus-within {
+      border-color: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.1), 0 0 20px rgba(34,197,94,0.08);
+    }
+    .input-box input {
+      background: transparent;
+      outline: none;
+      width: 100%;
+      color: white;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .input-box input::placeholder { color: rgba(255,255,255,0.15); }
+    @media (max-width: 480px) {
+      .input-box input { font-size: 1.6rem; }
+    }
+
+    /* ═══════ RESULTADO ═══════ */
+    .result-number {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2rem, 8vw, 3.2rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+
+    /* ═══════ TABS ═══════ */
+    .tabs-container {
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      padding: 4px;
+    }
+    .tab-btn {
+      border-radius: 11px;
+      transition: all 0.25s;
+      font-weight: 600;
+      padding: 10px 8px;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .tab-btn.active {
+      background: rgba(34,197,94,0.15);
+      border-color: rgba(34,197,94,0.35);
+      color: #4ade80;
+      box-shadow: 0 0 16px rgba(34,197,94,0.08);
+    }
+    .tab-btn:not(.active) { color: rgba(255,255,255,0.45); }
+    .tab-btn:not(.active):hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.04); }
+
+    /* ═══════ WHATSAPP BUTTON ═══════ */
+    .whatsapp-btn {
+      background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+      border: none;
+      border-radius: 16px;
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 24px rgba(37,211,102,0.25), 0 0 0 0 rgba(37,211,102,0);
+      position: relative;
+      overflow: hidden;
+    }
+    .whatsapp-btn:hover {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 8px 32px rgba(37,211,102,0.35), 0 0 0 3px rgba(37,211,102,0.12);
+    }
+    .whatsapp-btn:active { transform: translateY(0) scale(0.99); }
+    .whatsapp-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    /* Shimmer para el boton de WA */
+    @keyframes shimmer {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(200%); }
+    }
+    .whatsapp-btn .shimmer-bar {
+      position: absolute;
+      top: 0; left: 0;
+      width: 40%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+      animation: shimmer 3.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    /* ═══════ TASA BADGE ═══════ */
+    .tasa-badge {
+      background: rgba(34,197,94,0.08);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 999px;
+      padding: 5px 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ═══════ SWAP ARROW ═══════ */
+    .swap-circle {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: rgba(34,197,94,0.1);
+      border: 1.5px solid rgba(34,197,94,0.25);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .swap-circle::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      background: rgba(34,197,94,0.05);
+    }
+
+    /* ═══════ ANIMACIONES ═══════ */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 0.7s linear infinite; }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.92) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .pop-in { animation: popIn 0.3s cubic-bezier(0.22,1,0.36,1); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+    .dot-pulse { animation: pulse 2s ease-in-out infinite; }
+
+    /* ═══════ RESULTADO PANEL ═══════ */
+    .result-panel {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .result-panel::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #22c55e, transparent);
+      opacity: 0.5;
+    }
+  </style>
+</head>
+
+<body class="bg-main flex flex-col items-center justify-center p-4 py-8 sm:py-12">
+
+  <!-- ═══ ORBES ANIMADOS ═══ -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- ═══ CONTENIDO ═══ -->
+  <div class="w-full max-w-md relative z-10">
+
+    <!-- ── LOGO ─────────────────────────────────────────────────────────── -->
+    <div class="text-center mb-7 sm:mb-9">
+      <div class="flex items-center justify-center gap-2.5 mb-2">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center shadow-lg" style="box-shadow: 0 4px 20px rgba(34,197,94,0.35);">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5l9-4.5 9 4.5M3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5"/>
+          </svg>
+        </div>
+        <span class="text-white font-display font-bold text-[1.65rem] tracking-tight">ALKAMBIO</span>
+      </div>
+      <p class="text-gray-400 text-sm">Cambia tus bolívares al mejor precio · 🇻🇪 → 🇨🇴</p>
+    </div>
+
+    <!-- ── TARJETA PRINCIPAL ────────────────────────────────────────────── -->
+    <div class="card-main p-5 sm:p-7 space-y-5">
+
+      <!-- Tabs -->
+      <div class="tabs-container grid grid-cols-2 gap-1.5">
+        <button id="tab-vender" class="tab-btn active" onclick="setModo('vender')">
+          💸 Vendo Bolívares
+        </button>
+        <button id="tab-comprar" class="tab-btn" onclick="setModo('comprar')">
+          🛒 Compro Bolívares
+        </button>
+      </div>
+
+      <!-- Input -->
+      <div>
+        <p id="label-ingresa" class="text-gray-400 text-[0.7rem] font-semibold uppercase tracking-[0.12em] mb-2.5">
+          ¿Cuántos bolívares tienes?
+        </p>
+        <div class="input-box flex items-center gap-3 px-4 sm:px-5 py-3.5">
+          <span class="text-2xl select-none leading-none">🇻🇪</span>
+          <div class="flex-1">
+            <input id="monto-input" type="number" min="1" step="any" placeholder="0"
+                   aria-label="Monto en Bolívares" oninput="debouncedCalcular()" />
+          </div>
+          <span class="text-gray-500 font-semibold text-xs tracking-wider select-none">VES</span>
+        </div>
+      </div>
+
+      <!-- Tasa badge + timestamp -->
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="tasa-badge">
+          <span id="tasa-dot" class="w-1.5 h-1.5 rounded-full bg-gray-600 dot-pulse"></span>
+          <span id="tasa-label" class="text-[0.72rem] text-gray-400">Ingresa un monto</span>
+        </div>
+        <span id="timestamp-label" class="text-[0.68rem] text-gray-600"></span>
+      </div>
+
+      <!-- Flecha separadora -->
+      <div class="flex items-center justify-center">
+        <div class="swap-circle" aria-hidden="true">
+          <svg class="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- RESULTADO -->
+      <div class="result-panel p-5 sm:p-6 text-center space-y-1">
+
+        <!-- Spinner -->
+        <div id="loading-spinner" class="hidden justify-center py-2">
+          <svg class="spin w-7 h-7 text-green-400" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+        </div>
+
+        <div id="resultado-wrapper">
+          <p id="label-resultado" class="text-gray-500 text-[0.68rem] uppercase tracking-[0.14em] font-medium mb-2">Recibirías</p>
+          <div class="flex items-center justify-center gap-2">
+            <span class="text-2xl sm:text-3xl select-none leading-none">🇨🇴</span>
+            <p id="monto-resultado" class="result-number">— —</p>
+          </div>
+          <p id="moneda-resultado" class="text-gray-500 text-xs font-medium mt-1.5 tracking-wider">Pesos Colombianos</p>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div id="error-panel" class="hidden rounded-2xl px-4 py-3.5 text-center text-sm text-amber-300 space-y-1"
+           style="background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.15);">
+        <p>⚠️ No se pudo obtener la tasa en este momento.</p>
+        <p class="text-gray-500 text-xs">Verifica tu conexión e intenta de nuevo.</p>
+      </div>
+
+      <!-- BOTÓN WHATSAPP -->
+      <a id="whatsapp-link"
+         href="https://wa.me/584140781297?text=Hola%2C%20quiero%20hacer%20un%20cambio%20de%20divisas"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="whatsapp-btn w-full">
+        <span class="shimmer-bar"></span>
+        <svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+        <span>Quiero hacer un cambio</span>
+      </a>
+
+    </div><!-- /card -->
+
+    <!-- ── FOOTER ───────────────────────────────────────────────────────── -->
+    <p class="mt-6 text-center text-[0.78rem] text-white/80 leading-relaxed px-4 font-medium">
+      La tasa mostrada es referencial y sujeta a disponibilidad.<br/>
+      Confirma el monto exacto con un asesor antes de tu operación.
+    </p>
+
+  </div><!-- /container -->
+
+  <!-- ═══════════════════════ LÓGICA ══════════════════════════════════ -->
+  <script>
+    // ── Estado ──────────────────────────────────────────────────────────
+    let modo          = 'vender';
+    let debounceTimer = null;
+    let ultimaTasa    = null;
+
+    // ── Tabs ────────────────────────────────────────────────────────────
+    function setModo(m) {
+      modo = m;
+      document.getElementById('tab-vender').classList.toggle('active', modo === 'vender');
+      document.getElementById('tab-comprar').classList.toggle('active', modo === 'comprar');
+
+      if (modo === 'vender') {
+        document.getElementById('label-ingresa').textContent    = '¿Cuántos bolívares tienes?';
+        document.getElementById('label-resultado').textContent  = 'Recibirías';
+        document.getElementById('moneda-resultado').textContent = 'Pesos Colombianos';
+      } else {
+        document.getElementById('label-ingresa').textContent    = '¿Cuántos bolívares quieres?';
+        document.getElementById('label-resultado').textContent  = 'Pagarías';
+        document.getElementById('moneda-resultado').textContent = 'Pesos Colombianos';
+      }
+
+      if (ultimaTasa) renderResultado(ultimaTasa);
+      else debouncedCalcular();
+    }
+
+    // ── Debounce 500ms ──────────────────────────────────────────────────
+    function debouncedCalcular() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(calcular, 500);
+    }
+
+    // ── Fetch (Ahora es local via Firebase) ────────────────────────────
+    function calcular() {
+      const monto = parseFloat(document.getElementById('monto-input').value);
+      if (isNaN(monto) || monto <= 0) { resetResultado(); return; }
+
+      if (!ultimaTasa) {
+        mostrarError('Cargando tasas...');
+        return;
+      }
+
+      ocultarError();
+      renderResultado(ultimaTasa);
+    }
+
+    // ── Inicializar y Escuchar ──────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      await autoCargarTasas();
+      // Refrescar automáticamente la tasa en pantalla cada 60 segundos por si el usuario cambia el json
+      setInterval(autoCargarTasas, 60000);
+    });
+
+    async function autoCargarTasas() {
+      try {
+        // Le pasamos un timestamp para evitar la cache fuerte de github pages
+        const resp = await fetch('tasas.json?v=' + new Date().getTime());
+        if (!resp.ok) throw new Error('No se pudo leer tasas.json');
+        
+        const data = await resp.json();
+        
+        const pVenta = data.buy;   // Precio casa compradora
+        const pCompra = data.sell; // Precio casa vendedora
+
+        const tiVenta = pVenta ? ALKAMBIO_CONFIG.COP_POR_USD / (pVenta + 1) : 0;
+        const tiCompra = pCompra ? ALKAMBIO_CONFIG.COP_POR_USD / (pCompra - 1) : 0;
+
+        ultimaTasa = {
+          tasa_venta: tiVenta * ALKAMBIO_CONFIG.MARGEN_VENTA,
+          tasa_compra: tiCompra * ALKAMBIO_CONFIG.MARGEN_COMPRA,
+          timestamp: data.actualizado_en || new Date().toISOString()
+        };
+
+        // Recalcular instantáneamente la pantalla
+        const monto = parseFloat(document.getElementById('monto-input').value);
+        if (!isNaN(monto) && monto > 0) calcular();
+        else resetResultado(); // Muestra el badge con la tasa
+
+      } catch(e) {
+        console.error('[ALKAMBIO] Error cargando tasas:', e);
+        mostrarError("Error leyendo tasas");
+      }
+    }
+
+    // ── Renderizar ──────────────────────────────────────────────────────
+    function renderResultado(data) {
+      const monto = parseFloat(document.getElementById('monto-input').value) || 0;
+      let valorFinal, tasaMostrada;
+
+      if (modo === 'vender') {
+        valorFinal   = monto * data.tasa_venta;
+        tasaMostrada = data.tasa_venta;
+      } else {
+        valorFinal   = monto * data.tasa_compra;
+        tasaMostrada = data.tasa_compra;
+      }
+
+      const el = document.getElementById('monto-resultado');
+      el.textContent = valorFinal > 0 ? '$' + formatNum(valorFinal) : '— —';
+      el.classList.remove('pop-in');
+      void el.offsetWidth;
+      el.classList.add('pop-in');
+
+      // Actualizar enlace de WhatsApp con el monto
+      const textoWA = modo === 'vender'
+        ? `Hola, quiero vender ${formatNum(monto)} VES. La tasa es ${tasaMostrada.toFixed(4)} COP por VES.`
+        : `Hola, quiero comprar ${formatNum(monto)} VES. La tasa es ${tasaMostrada.toFixed(4)} COP por VES.`;
+      document.getElementById('whatsapp-link').href =
+        `https://wa.me/584140781297?text=${encodeURIComponent(textoWA)}`;
+
+      // Badge
+      document.getElementById('tasa-dot').className = 'w-1.5 h-1.5 rounded-full bg-green-400 dot-pulse';
+      document.getElementById('tasa-label').textContent = `1 VES = ${tasaMostrada.toFixed(4)} COP`;
+
+      document.getElementById('timestamp-label').textContent =
+        `${new Date(data.timestamp).toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' })}`;
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────
+    function formatNum(n) {
+      return n.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    function mostrarLoading(on) {
+      document.getElementById('loading-spinner').classList.toggle('hidden', !on);
+      document.getElementById('loading-spinner').classList.toggle('flex', on);
+      document.getElementById('resultado-wrapper').style.opacity = on ? '0.25' : '1';
+    }
+
+    function mostrarError(msg = 'Sin conexión') {
+      document.getElementById('error-panel').classList.remove('hidden');
+      document.getElementById('tasa-dot').className = 'w-1.5 h-1.5 rounded-full bg-amber-400 dot-pulse';
+      document.getElementById('tasa-label').textContent = msg;
+      document.getElementById('monto-resultado').textContent = '— —';
+    }
+    function ocultarError() { document.getElementById('error-panel').classList.add('hidden'); }
+
+    function resetResultado() {
+      document.getElementById('monto-resultado').textContent = '— —';
+      document.getElementById('tasa-dot').className = 'w-1.5 h-1.5 rounded-full bg-gray-600 dot-pulse';
+      document.getElementById('tasa-label').textContent = 'Ingresa un monto';
+      document.getElementById('timestamp-label').textContent = '';
+      ocultarError();
+    }
+
+    window.addEventListener('load', () => document.getElementById('monto-input').focus());
+  </script>
+</body>
+</html>
