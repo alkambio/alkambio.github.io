@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ALKAMBIO · Admin Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <script src="config.js"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], display: ['Space Grotesk','sans-serif'] } } }
+    };
+  </script>
+  <style>
+    body { font-family:'Inter',sans-serif; background:#080c10; color:#e2e8f0; min-height:100vh; overflow-x:hidden; position:relative; }
+    /* Grid de fondo y luces */
+    body::before {
+      content: ''; position: absolute; inset: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 30px 30px;
+      z-index: -1; pointer-events: none; opacity: 0.5;
+    }
+    .glow-ball { position:absolute; width:400px; height:400px; background:radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 60%); border-radius:50%; filter:blur(40px); z-index:-1; pointer-events:none; }
+    
+    .card { background:rgba(20,24,30,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:24px; backdrop-filter:blur(30px); -webkit-backdrop-filter:blur(30px); transition: transform 0.3s, box-shadow 0.3s; }
+    .card:hover { border-color:rgba(16,185,129,0.15); box-shadow:0 8px 30px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(16,185,129,0.05); }
+    
+    .input-glass { background:rgba(0,0,0,0.2); border:1.5px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px 16px; color:white; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:1.1rem; width:100%; outline:none; transition:all 0.3s; }
+    .input-glass:focus { border-color:#10b981; box-shadow:0 0 0 4px rgba(16,185,129,0.1); background:rgba(0,0,0,0.4); }
+    .input-glass::placeholder { color:rgba(255,255,255,0.2); font-weight:400; }
+    
+    .btn-neon { background:linear-gradient(135deg,#10b981,#059669); color:white; border:none; border-radius:14px; padding:14px 24px; font-weight:700; font-family:'Space Grotesk',sans-serif; font-size:1.05rem; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 15px rgba(16,185,129,0.25); text-shadow:0 1px 2px rgba(0,0,0,0.2); width:100%; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .btn-neon:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(16,185,129,0.35); }
+    .btn-neon:active { transform:translateY(0); }
+    
+    .preview-box { background:linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.05); border-radius:16px; padding:16px; margin-top:12px; }
+    .preview-val { font-family:'Space Grotesk',sans-serif; font-size:1.6rem; font-weight:700; background:linear-gradient(135deg, #34d399, #10b981); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    
+    /* Toast */
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 24px; border-radius:14px; font-weight:600; font-size:0.9rem; z-index:999; box-shadow:0 8px 30px rgba(0,0,0,0.5); animation:slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display:flex; align-items:center; gap:8px; }
+    .toast-ok { background:#065f46; border:1px solid #10b981; color:#fff; }
+    .toast-err { background:#7f1d1d; border:1px solid #ef4444; color:#fff; }
+    .toast-warn { background:#78350f; border:1px solid #f59e0b; color:#fff; }
+    @keyframes slideUp { from{opacity:0;transform:translate(-50%,20px)} to{opacity:1;transform:translate(-50%,0)} }
+  </style>
+</head>
+<body class="flex flex-col items-center py-10 px-4">
+  
+  <div class="glow-ball" style="top:-10%; left:-10%;"></div>
+  <div class="glow-ball" style="bottom:-10%; right:-10%; background:radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 60%);"></div>
+
+  <div class="w-full max-w-4xl space-y-8">
+    
+    <!-- HEADER -->
+    <div class="text-center space-y-2">
+      <div class="inline-flex items-center justify-center gap-3 p-2 pr-5 bg-white/5 border border-white/10 rounded-full backdrop-blur-md mb-2">
+        <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+        </div>
+        <span class="text-white font-display font-bold text-sm tracking-widest uppercase">Admin Control Center</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-display font-bold text-white tracking-tight">Panel de Tasas <span class="text-emerald-500">Serverless</span></h1>
+      <p class="text-gray-400 max-w-lg mx-auto text-sm">Ajusta los precios de Binance manualmente. Los cambios se compilan directo a tu repositorio de GitHub.</p>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+      
+      <!-- CONTROLS COLUMN -->
+      <div class="md:col-span-7 space-y-6">
+        
+        <!-- CARD: CONFIGURACION -->
+        <div class="card p-6 sm:p-8">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-2 h-6 rounded-full bg-emerald-500"></div>
+            <h2 class="text-lg font-display font-bold text-white">Configurar Tasas Base</h2>
+          </div>
+
+          <div class="space-y-6">
+            <!-- INPUT: BUY -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold text-gray-400 uppercase tracking-widest">Client Vende VES → Casa Compra</label>
+                <span class="text-[0.65rem] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20">Ref. Binance BUY</span>
+              </div>
+              <div class="relative">
+                <input id="input-buy" type="number" class="input-glass pl-12" placeholder="Ej. 636.50" oninput="actualizarPrevias()">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-display">B.</span>
+              </div>
+            </div>
+
+            <!-- INPUT: SELL -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold text-gray-400 uppercase tracking-widest">Client Compra VES → Casa Vende</label>
+                <span class="text-[0.65rem] bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded border border-orange-500/20">Ref. Binance SELL</span>
+              </div>
+              <div class="relative">
+                <input id="input-sell" type="number" class="input-glass pl-12" placeholder="Ej. 630.00" oninput="actualizarPrevias()">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-display">B.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD: SEGURIDAD GITHUB -->
+        <div class="card p-6 sm:p-8 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-full pointer-events-none"></div>
+          <div class="flex items-center gap-3 mb-4">
+            <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            <h2 class="text-sm font-semibold text-gray-300">GitHub API Access</h2>
+          </div>
+          <div class="space-y-3">
+            <input id="input-token" type="password" class="input-glass text-sm py-2 px-3" placeholder="Pega tu Personal Access Token (PAT) aquí">
+            <p class="text-[0.65rem] text-gray-500 leading-tight">Este token solo se usa en tu navegador para actualizar el archivo. Nunca saldrá de aquí. <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank" class="text-emerald-400 hover:underline">Generar uno aquí (activa la casilla 'repo')</a>.</p>
+          </div>
+          
+          <button onclick="guardarTasas()" class="btn-neon mt-6" id="btn-save">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Publicar Cambios al Servidor
+          </button>
+        </div>
+
+      </div>
+
+      <!-- PREVIEW COLUMN -->
+      <div class="md:col-span-5 space-y-6">
+        
+        <div class="card p-6 sm:p-8 h-full border-emerald-500/20 bg-gradient-to-b from-emerald-900/10 to-transparent">
+          <div class="flex items-center gap-2 mb-6">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest">Vista Previa en Vivo</h2>
+          </div>
+
+          <p class="text-xs text-gray-400 mb-4">Así quedará la calculadora del cliente final aplicando la protección y márgenes configurados:</p>
+
+          <div class="space-y-4">
+            <!-- PREVIEW: VENTA CLIENTE -->
+            <div class="preview-box">
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-xs text-gray-400 font-medium">Cliente Vende 1 VES</span>
+                <span class="text-[0.6rem] bg-white/5 px-2 py-0.5 rounded text-gray-400">Protección +1 | Margen -6%</span>
+              </div>
+              <div class="flex items-end gap-2">
+                <span class="text-xl">🇨🇴</span>
+                <span id="prev-venta" class="preview-val">—</span>
+                <span class="text-sm text-gray-500 font-medium pb-1">COP</span>
+              </div>
+            </div>
+
+            <!-- PREVIEW: COMPRA CLIENTE -->
+            <div class="preview-box">
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-xs text-gray-400 font-medium">Cliente Compra 1 VES</span>
+                <span class="text-[0.6rem] bg-white/5 px-2 py-0.5 rounded text-gray-400">Protección -1 | Margen +4%</span>
+              </div>
+              <div class="flex items-end gap-2">
+                <span class="text-xl">🇨🇴</span>
+                <span id="prev-compra" class="preview-val">—</span>
+                <span class="text-sm text-gray-500 font-medium pb-1">COP</span>
+              </div>
+            </div>
+            
+            <div class="pt-4 border-t border-white/5">
+              <p class="text-[0.65rem] text-center text-gray-500 font-medium" id="status-text">Leyendo estado actual de la red...</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+    
+    <div class="text-center pt-4">
+      <a href="/" class="text-sm text-gray-500 hover:text-white transition-colors">Volver a la calculadora →</a>
+    </div>
+
+  </div>
+
+  <script>
+    // ── INICIALIZACIÓN ──────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      // Cargar token guardado en localstorage (para no pegarlo a cada rato)
+      const guardado = localStorage.getItem('alkambio_gh_token');
+      if (guardado) document.getElementById('input-token').value = guardado;
+      
+      cargarActuales();
+    });
+
+    // ── LECTURA DE ESTADO ACTUAL (DESDE GITHUB) ─────────────────────────
+    async function cargarActuales() {
+      try {
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}?ref=main&time=${Date.now()}`;
+        const res = await fetch(url);
+        if(!res.ok) throw new Error('No se pudo encontrar tasas.json');
+        
+        const fileData = await res.json();
+        // File content comes in Base64
+        const contentStr = decodeURIComponent(escape(window.atob(fileData.content)));
+        const data = JSON.parse(contentStr);
+
+        // Fill inputs
+        document.getElementById('input-buy').value = data.buy;
+        document.getElementById('input-sell').value = data.sell;
+        window._currentFileSha = fileData.sha; // Necesitamos el SHA viejo para poder sobreescribirlo
+
+        actualizarPrevias();
+        document.getElementById('status-text').innerHTML = `Última carga en GITHUB: <span class="text-emerald-400">${new Date(data.actualizado_en).toLocaleString('es-VE')}</span>`;
+
+      } catch (e) {
+        toast('Archivo no encontrado en GitHub. Si es nuevo, se creará al guardar.', 'warn');
+        document.getElementById('status-text').textContent = "Esperando la primera publicación.";
+      }
+    }
+
+    // ── MOTOR DE CÁLCULO EN VIVO ────────────────────────────────────────
+    function actualizarPrevias() {
+      const pBuy = parseFloat(document.getElementById('input-buy').value);
+      const pSell = parseFloat(document.getElementById('input-sell').value);
+
+      const elVenta = document.getElementById('prev-venta');
+      const elCompra = document.getElementById('prev-compra');
+
+      if (isNaN(pBuy)) { elVenta.textContent = '—'; } else {
+        const tiVenta = ALKAMBIO_CONFIG.COP_POR_USD / (pBuy + 1);
+        const finalVenta = tiVenta * ALKAMBIO_CONFIG.MARGEN_VENTA;
+        elVenta.textContent = finalVenta.toFixed(4);
+      }
+
+      if (isNaN(pSell)) { elCompra.textContent = '—'; } else {
+        const tiCompra = ALKAMBIO_CONFIG.COP_POR_USD / (pSell - 1);
+        const finalCompra = tiCompra * ALKAMBIO_CONFIG.MARGEN_COMPRA;
+        elCompra.textContent = finalCompra.toFixed(4);
+      }
+    }
+
+    // ── ESCRITURA EN GITHUB API ─────────────────────────────────────────
+    async function guardarTasas() {
+      const buy = parseFloat(document.getElementById('input-buy').value);
+      const sell = parseFloat(document.getElementById('input-sell').value);
+      const token = document.getElementById('input-token').value.trim();
+
+      if (isNaN(buy) || isNaN(sell)) return toast('Tasas inválidas', 'err');
+      if (!token) return toast('Pega tu token de GitHub', 'err');
+
+      localStorage.setItem('alkambio_gh_token', token);
+
+      const payloadObj = {
+        buy: buy,
+        sell: sell,
+        actualizado_en: new Date().toISOString()
+      };
+
+      const payloadStr = JSON.stringify(payloadObj, null, 2);
+      // Codificar a base64 (requerido por GitHub)
+      const payloadBase64 = window.btoa(unescape(encodeURIComponent(payloadStr)));
+
+      const btn = document.getElementById('btn-save');
+      btn.innerHTML = `<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Compiando...`;
+      btn.disabled = true;
+
+      try {
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
+        
+        const bodyObj = {
+          message: `Update tasas: Buy ${buy} | Sell ${sell}`,
+          content: payloadBase64,
+          branch: "main"
+        };
+
+        // Si ya leimos el archivo antes, mandamos el SHA para sobreescribir
+        if (window._currentFileSha) {
+          bodyObj.sha = window._currentFileSha;
+        }
+
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify(bodyObj)
+        });
+
+        const resData = await res.json();
+
+        if (res.ok) {
+          toast('¡ÉXITO! Github está reconstruyendo la página.', 'ok');
+          window._currentFileSha = resData.content.sha; // Actualizar SHA interno
+          document.getElementById('status-text').innerHTML = `Nuevo commit realizado con éxito. Espera ~1min.`;
+        } else {
+          throw new Error(resData.message || 'Error en Github API');
+        }
+
+      } catch (e) {
+        console.error(e);
+        toast(e.message, 'err');
+      } finally {
+        btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg> Publicar Cambios al Servidor`;
+        btn.disabled = false;
+      }
+    }
+
+    // ── HELPERS ─────────────────────────────────────────────────────────
+    function toast(msg, type) {
+      const el = document.createElement('div');
+      el.className = `toast toast-${type}`;
+      const icon = type==='ok' ? '✓' : (type==='warn' ? '⚠️' : '✖');
+      el.innerHTML = `<span>${icon}</span> <span>${msg}</span>`;
+      document.body.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translate(-50%, 20px)';
+        setTimeout(() => el.remove(), 300);
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
